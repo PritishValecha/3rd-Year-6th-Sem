@@ -4,6 +4,7 @@ import numpy as np
 import altair as alt
 import matplotlib.pyplot as plt
 
+
 st.set_page_config(
     page_title="Covid Vaccine Status",
     page_icon="💉",
@@ -19,15 +20,18 @@ prasad = prasad.dropna(subset=['Total Doses Administered','Male (Doses Administe
 state = prasad['State'].unique()
 state = state.tolist()
 state.pop(0)
-prasad_dic_male ={}
-prasad_dic_female ={}
+prasad_dic_male = {}
+prasad_dic_female = {}
+prasad_dic_total = {}
 for i in state:
     prasad_dic_male[i] = max(prasad[prasad['State']==i]['Male (Doses Administered)'])
     prasad_dic_female[i] = max(prasad[prasad['State']==i]['Female (Doses Administered)'])
+    prasad_dic_total[i] = max(prasad[prasad['State']==i]['Total Doses Administered'])
 column1 = list(prasad_dic_male.keys())
 column2 = list(prasad_dic_male.values())
 column3 = list(prasad_dic_female.values())
-data = {'State':column1, 'male':column2, 'female':column3}
+column4 = list(prasad_dic_total.values())
+data = {'State':column1, 'male':column2, 'female':column3, 'total':column4}
 df1 = pd.DataFrame(data)
 
 shantanu = df
@@ -42,14 +46,20 @@ with st.sidebar:
     selected_state = st.selectbox('Select a state', state_list, index=len(state_list)-1)
     df1_selected_state = df1[df1['State']==selected_state]
 
+def func(pct, allvalues):
+    absolute = int(pct / 100.*np.sum(allvalues))
+    return "{:.1f}%".format(pct, absolute)
+
 def plot_male_female(state):
     male = int(df1[df1['State']==state]['male'])
     female = int(df1[df1['State']==state]['female'])
-    plot = (male,female)
+    total = int(df1[df1['State']==state]['total'])
+    plot = [male,female]
     fig,x = plt.subplots()
-    plt.title('Male/Female vaccination distribution in '+state)
-    x.pie(x=plot, startangle=90, colors=['b', 'pink'], labels=['Male', 'Female'])
+    plt.title('Male/Female vaccination distribution in'+state+' (Total doses = '+str(total)+')')
+    x.pie(x=plot, startangle=90, colors=['b', 'pink'], labels=['Male', 'Female'], autopct=lambda pct: func(pct, plot))
     plt.tight_layout()
+    # plt.legend()
     st.pyplot(fig)
     # return x
 
@@ -76,6 +86,8 @@ def first_second_dose(state):
     plt.xticks([r + bw for r in range(len(dates))], dates)
     plt.xticks(rotation=90)
     plt.title('Doses Administered in '+state)
+    ax = plt.gca()
+    ax.ticklabel_format(useOffset=False, style='plain', axis='y')
     plt.legend()
     st.pyplot(fig)
     # plt.show()
@@ -94,6 +106,8 @@ plt.xlabel('States')
 plt.ylabel('Total Doses Administered')
 plt.title('Total COVID-19 Vaccination Doses Administered per State')
 plt.xticks(rotation=90) 
+ax = plt.gca()
+ax.ticklabel_format(useOffset=False, style='plain', axis='y')
 # plt.tight_layout()
 # z.show()
 st.pyplot(fig1)
